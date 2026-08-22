@@ -35,9 +35,12 @@ opposite way underneath as the drone.
 
 ### The retrace beam
 
-A vector-display spot runs the curve with a short phosphor tail — one lap every
-~7 seconds, slow enough to read as a beam rather than a flicker. It rides
-whatever was drawn last, so it always sits exactly on the gold voice.
+A vector-display spot runs each curve with a short phosphor tail — one lap every
+~7 seconds, slow enough to read as a beam rather than a flicker. Every layer
+gets its own: gold on the voice, a dimmer violet one on the drone beneath. It
+rides the buffers `trace()` has just filled, so it can never drift off its
+curve. Tuned to sit just at the edge of noticeable — it should register as the
+figure being *drawn* rather than as a moving dot.
 
 ### Choosing a figure
 

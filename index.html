@@ -721,12 +721,13 @@ footer{
   }
 
   // The retrace beam: a vector-display spot running the curve with a
-  // short phosphor tail behind it. Rides whatever trace() drew last,
-  // so it always sits exactly on the gold voice. Deliberately slow --
-  // one lap every ~7s -- so it reads as a beam, not a flicker.
+  // short phosphor tail. Rides whatever trace() drew last, so it always
+  // sits exactly on that layer's curve -- call it once per layer.
+  // Deliberately slow (one lap every ~7s) and faint, so it reads as a
+  // beam rather than a flicker.
   var BEAM_TAIL = 150, BEAM_SEG = 15;
 
-  function beam(t01) {
+  function beam(t01, rgb, core, gain) {
     var head = Math.floor(t01 * STEPS) % STEPS, s0, k, i0, i1, a;
 
     for (s0 = BEAM_TAIL; s0 > 0; s0 -= BEAM_SEG) {
@@ -738,17 +739,17 @@ footer{
       for (k = i0; k <= i1; k++) {
         k === i0 ? ctx.moveTo(bx[k], by[k]) : ctx.lineTo(bx[k], by[k]);
       }
-      ctx.strokeStyle = 'rgba(240,224,178,' + (0.34 * a * a).toFixed(3) + ')';
-      ctx.lineWidth = 0.9 + 1.5 * a;
+      ctx.strokeStyle = 'rgba(' + rgb + ',' + (0.15 * gain * a * a).toFixed(3) + ')';
+      ctx.lineWidth = 0.85 + 0.75 * a;
       ctx.stroke();
     }
 
     // the spot itself
-    var hx = bx[head], hy = by[head], R = 9;
+    var hx = bx[head], hy = by[head], R = 7;
     var g = ctx.createRadialGradient(hx, hy, 0, hx, hy, R);
-    g.addColorStop(0, 'rgba(255,246,222,0.85)');
-    g.addColorStop(0.35, 'rgba(232,206,138,0.30)');
-    g.addColorStop(1, 'rgba(232,206,138,0)');
+    g.addColorStop(0, 'rgba(' + core + ',' + (0.40 * gain).toFixed(3) + ')');
+    g.addColorStop(0.35, 'rgba(' + rgb + ',' + (0.13 * gain).toFixed(3) + ')');
+    g.addColorStop(1, 'rgba(' + rgb + ',0)');
     ctx.fillStyle = g;
     ctx.beginPath();
     ctx.arc(hx, hy, R, 0, Math.PI * 2);
@@ -805,13 +806,12 @@ footer{
     // the drone: wider, violet, tumbling the other way underneath
     trace(cur, m, drift, -yaw * 0.7, pitch * 0.6, r * 1.16, cx, cy,
           '110,90,168', 1.3, 0.34);
+    beam(sweep, '167,139,216', '226,214,246', 0.55);
 
     // the voice: gold, the figure you actually read
     trace(cur, m, phase, yaw, pitch, r, cx, cy,
           '201,162,74', 1.15, 0.62);
-
-    // the beam rides the voice -- trace() just left it in the buffers
-    beam(sweep);
+    beam(sweep, '232,206,138', '255,246,222', 1);
   }
 
   function still() {
@@ -827,8 +827,9 @@ footer{
     var f = norm(TRIADS[0]);
     var m = typeof FIGURE === 'number' ? FIGURE : (FIGURE === 'knot' ? 1 : 0);
     trace(f, m, 0, -0.63, 0.30, r * 1.16, cx, cy, '110,90,168', 1.3, 0.55);
+    beam(0.18, '167,139,216', '226,214,246', 0.55);
     trace(f, m, 0.9, 0.90, 0.50, r, cx, cy, '201,162,74', 1.15, 1.0);
-    beam(0.18);
+    beam(0.18, '232,206,138', '255,246,222', 1);
     if (readout) readout.textContent = TRIADS[0].join(':');
   }
 
