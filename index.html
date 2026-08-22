@@ -467,8 +467,8 @@ footer{
   <div class="rail__mark">Entheoscillator</div>
   <div class="rail__tick"></div>
   <div class="rail__readout">
-    <span>ratio</span>
-    <div id="readout">3:2</div>
+    <span>triad</span>
+    <div id="readout">4:5:6</div>
   </div>
 </aside>
 
@@ -477,7 +477,7 @@ footer{
   <header class="hero">
     <h1 class="hero__name">Entheoscillator</h1>
     <div class="hero__rule" aria-hidden="true"></div>
-    <p class="hero__line">Two oscillators plotted against each other draw a mandala. <em>That has always been the whole idea.</em></p>
+    <p class="hero__line">Three oscillators plotted against each other draw a mandala. <em>That has always been the whole idea.</em></p>
     <p class="hero__meta">Ambient &middot; Drone &middot; Bay&nbsp;Area, California</p>
   </header>
 
@@ -602,17 +602,25 @@ footer{
   var readout = document.getElementById('readout');
   var reduced = matchMedia('(prefers-reduced-motion: reduce)');
 
-  // Just-intonation ratios: unison, fifth, fourth, major third,
-  // minor third, major sixth, whole tone.
-  var RATIOS = [
-    [3, 2], [5, 4], [4, 3], [5, 3],
-    [9, 8], [8, 5], [6, 5], [7, 4]
+  // Just-intonation triads -- one oscillator per member of the trio.
+  // Two drive the horizontal, one drives the vertical, which is what
+  // makes this a three-pendulum harmonograph rather than a Lissajous.
+  var TRIADS = [
+    [4, 5, 6],     // major
+    [10, 12, 15],  // minor
+    [6, 7, 9],     // septimal
+    [3, 4, 5],
+    [5, 6, 7],
+    [2, 3, 4],
+    [8, 9, 12],
+    [9, 11, 12]
   ];
+  function norm(t) { return [t[0], t[1], t[2]]; }
 
   var W = 0, H = 0, dpr = 1;
   var idx = 0;
-  var fx = 3, fy = 2;          // current (interpolated) frequencies
-  var tx = 3, ty = 2;          // target frequencies
+  var cur = norm(TRIADS[0]);   // current (interpolated) frequencies
+  var tgt = norm(TRIADS[0]);   // target frequencies
   var phase = Math.PI / 4;     // never zero: zero phase collapses to a line
   var drift = 0;
   var lastSwap = 0;
@@ -629,13 +637,27 @@ footer{
     ctx.fillRect(0, 0, W, H);
   }
 
-  // Plot one closed-ish Lissajous pass.
-  function trace(freqX, freqY, ph, radius, cx, cy, stroke, width, steps) {
+  // Three rotating vectors -- one oscillator per member of the trio --
+  // summed in the plane. Frequencies 1, 1-n and 1+n give exact n-fold
+  // symmetry, so the triad's middle voice sets how many petals the
+  // figure has and the outer two set how deep they cut. Integer
+  // frequencies close over a single 2*pi sweep; while the figure is
+  // easing between two triads they are fractional, and it blooms open.
+  function trace(f, ph, radius, cx, cy, stroke, width, steps) {
+    var n = f[1];
+    var sum = f[0] + f[2];
+    var a2 = 1.15 * f[0] / sum;
+    var a3 = 1.15 * f[2] / sum;
+    var S = radius / (1 + a2 + a3);
     ctx.beginPath();
     for (var i = 0; i <= steps; i++) {
-      var t = (i / steps) * Math.PI * 2 * 6;
-      var x = cx + Math.sin(freqX * t + ph) * radius;
-      var y = cy + Math.sin(freqY * t) * radius * 0.82;
+      var u = (i / steps) * Math.PI * 2;
+      var x = cx + (Math.cos(u + ph) +
+                    a2 * Math.cos((1 - n) * u - ph) +
+                    a3 * Math.cos((1 + n) * u + ph * 0.5)) * S;
+      var y = cy + (Math.sin(u + ph) +
+                    a2 * Math.sin((1 - n) * u - ph) +
+                    a3 * Math.sin((1 + n) * u + ph * 0.5)) * S;
       i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
     }
     ctx.strokeStyle = stroke;
@@ -644,11 +666,10 @@ footer{
   }
 
   function swapRatio(now) {
-    idx = (idx + 1) % RATIOS.length;
-    tx = RATIOS[idx][0];
-    ty = RATIOS[idx][1];
+    idx = (idx + 1) % TRIADS.length;
+    tgt = norm(TRIADS[idx]);
     lastSwap = now;
-    if (readout) readout.textContent = tx + ':' + ty;
+    if (readout) readout.textContent = TRIADS[idx].join(':');
   }
 
   function frame(now) {
@@ -656,11 +677,10 @@ footer{
 
     if (now - lastSwap > 9000) swapRatio(now);
 
-    // ease current frequencies toward the target ratio — the
-    // in-between states are where the figure blooms open
-    fx += (tx - fx) * 0.012;
-    fy += (ty - fy) * 0.012;
-    phase += 0.0016;
+    // ease each voice toward the target triad -- the in-between
+    // states are where the figure blooms open
+    for (var v = 0; v < 3; v++) cur[v] += (tgt[v] - cur[v]) * 0.012;
+    phase += 0.0011;
     drift += 0.0007;
 
     // trail rather than clear, so the line accumulates its own glow
@@ -677,16 +697,16 @@ footer{
     ctx.lineJoin = 'round';
 
     // the drone: slow, wide, violet, underneath
-    trace(fx * 0.5, fy * 0.5, drift, r * 1.42, cx, cy,
-          'rgba(110,90,168,0.30)', 1.4, 900);
+    trace(cur, drift, r * 1.42, cx, cy,
+          'rgba(110,90,168,0.30)', 1.3, 3200);
 
     // the voice: gold, the figure you actually read
-    trace(fx, fy, phase, r, cx, cy,
-          'rgba(201,162,74,0.30)', 1.1, 1400);
+    trace(cur, phase, r, cx, cy,
+          'rgba(201,162,74,0.34)', 1.1, 3600);
 
     // the harmonic above it, half-size, counter-phase
-    trace(fx, fy, -phase * 1.6, r * 0.55, cx, cy,
-          'rgba(232,206,138,0.13)', 0.8, 900);
+    trace(cur, -phase * 1.6, r * 0.55, cx, cy,
+          'rgba(232,206,138,0.16)', 0.9, 2800);
   }
 
   function still() {
@@ -699,10 +719,11 @@ footer{
     var cx = W * (wide ? 0.66 : 0.5),
         cy = H * (wide ? 0.40 : 0.34),
         r  = Math.min(W, H) * (wide ? 0.30 : 0.32);
-    trace(1.5, 1, 0, r * 1.42, cx, cy, 'rgba(110,90,168,0.30)', 1.4, 1200);
-    trace(3, 2, Math.PI / 4, r, cx, cy, 'rgba(201,162,74,0.62)', 1.1, 2000);
-    trace(3, 2, -Math.PI / 3, r * 0.55, cx, cy, 'rgba(232,206,138,0.30)', 0.8, 1400);
-    if (readout) readout.textContent = '3:2';
+    var f = norm(TRIADS[0]);
+    trace(f, 0, r * 1.42, cx, cy, 'rgba(110,90,168,0.30)', 1.3, 3200);
+    trace(f, 0.7, r, cx, cy, 'rgba(201,162,74,0.80)', 1.1, 3600);
+    trace(f, -1.1, r * 0.55, cx, cy, 'rgba(232,206,138,0.55)', 0.9, 2800);
+    if (readout) readout.textContent = TRIADS[0].join(':');
   }
 
   function start() {

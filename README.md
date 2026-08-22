@@ -7,15 +7,23 @@ node_modules. Open it in a browser to see it; push it anywhere to ship it.
 
 The band name already contains the thesis — *entheogen* + *oscillator* — so the
 sacred geometry on this site isn't decoration pasted on top. The figure in the
-hero is a **live harmonograph**: a canvas plotting two oscillators against each
-other in real time. That's what a Lissajous figure is, and it's why they look
-like mandalas.
+hero is drawn live: three rotating vectors — one oscillator per member of the
+trio — summed in the plane, on a canvas, in real time.
 
-It drifts through **just-intonation ratios** — 3:2, 5:4, 4:3, 5:3, 9:8, 8:5,
-6:5, 7:4 — holding each for nine seconds and blooming open as it interpolates
-between them. The ratio currently on screen is printed in the left rail. Those
-are the same ratios the statement says the band tunes to, so the geometry and
-the tuning are literally the same set of numbers.
+It drifts through **just-intonation triads** — 4:5:6 (major), 10:12:15 (minor),
+6:7:9 (septimal), 3:4:5, 5:6:7, 2:3:4, 8:9:12, 9:11:12 — holding each for nine
+seconds. The triad on screen is printed in the left rail. Those are the same
+ratios the statement says the band tunes to, so the geometry and the tuning are
+literally the same set of numbers.
+
+The mapping is exact, not decorative. For a triad `a:b:c` the three oscillators
+run at frequencies `1`, `1-b` and `1+b`, which produces **b-fold rotational
+symmetry** — so the middle voice sets how many petals the figure has (4:5:6
+gives five, 2:3:4 gives three) and the outer two set how deep they cut. Integer
+frequencies close over a single 2π sweep, so each triad resolves into a finished
+rosette; while it eases from one triad to the next the frequencies are
+fractional, the curve no longer closes, and it blooms open. Three nested copies
+at different scales and phases give the interference texture.
 
 The figure owns the first screen, then fades back to 22% as you scroll so it
 never fights the body copy.
@@ -25,7 +33,9 @@ never fights the body copy.
 Search `index.html` for `EDIT:` — there are two.
 
 1. **The show** (`<section id="live">`) — festival name, date, and city are
-   placeholders reading "TBA". Replace once Santa Cruz is confirmed.
+   placeholders reading "TBA". Replace once the festival is confirmed. Note the
+   Live section deliberately still says Santa Cruz — that's where the gig is,
+   even though the group is billed as Bay Area.
 2. **The email** (`<section id="contact">`) — `hello@entheoscillator.com` is a
    placeholder. **It is not a real address.** Swap in whatever you actually
    want bookings going to before this goes public.
