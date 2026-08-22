@@ -591,10 +591,11 @@ footer{
 <script>
 /* ─────────────────────────────────────────────────────────────
    The field.
-   A harmonograph: two oscillators plotted against each other.
-   The curve drifts between just-intonation ratios — the same
-   ratios the band tunes to — so the geometry on screen and the
-   tuning of the music are the same set of numbers.
+   Three oscillators — one per member — drifting through
+   just-intonation triads, the same ratios the band tunes to, so the
+   geometry on screen and the tuning of the music are the same set of
+   numbers. The figure breathes between two readings of those numbers:
+   a flat, orderly mandala and a tumbling 3D knot. See FIGURE below.
    ───────────────────────────────────────────────────────────── */
 (function () {
   var canvas = document.getElementById('field');
@@ -602,9 +603,18 @@ footer{
   var readout = document.getElementById('readout');
   var reduced = matchMedia('(prefers-reduced-motion: reduce)');
 
+  // 'morph'   -- breathe between the two figures (default)
+  // 'rosette'  -- hold the flat, orderly mandala
+  // 'knot'     -- hold the tumbling 3D Lissajous
+  // Override without editing: append ?figure=rosette to the URL. A raw
+  // 0..1 value works too (?figure=0.5) for pinning a point mid-morph.
+  var FIGURE = 'morph';
+  try {
+    var q = /[?&]figure=(morph|rosette|knot|[01](?:\.\d+)?)/.exec(location.search);
+    if (q) FIGURE = isNaN(parseFloat(q[1])) ? q[1] : parseFloat(q[1]);
+  } catch (e) {}
+
   // Just-intonation triads -- one oscillator per member of the trio.
-  // Two drive the horizontal, one drives the vertical, which is what
-  // makes this a three-pendulum harmonograph rather than a Lissajous.
   var TRIADS = [
     [4, 5, 6],     // major
     [10, 12, 15],  // minor
@@ -623,6 +633,8 @@ footer{
   var phase = Math.PI / 4;     // never zero: zero phase collapses to a line
   var yaw = 0.9, pitch = 0.5;  // the figure tumbles rather than just drifting
   var drift = 0;
+  var morph = 0;               // drives the mandala <-> knot blend
+  var sweep = 0;               // retrace beam position, 0..1
   var lastSwap = 0;
   var raf = null;
 
@@ -637,42 +649,67 @@ footer{
     ctx.fillRect(0, 0, W, H);
   }
 
-  // A 3D Lissajous: one oscillator per axis, one axis per member of the
-  // trio. The curve is projected back to the screen with yaw and pitch
-  // and shaded by depth, so it reads as weaving over and under itself
-  // rather than lying flat. Integer frequencies close over one 2*pi
-  // sweep; easing between triads makes them fractional and it opens up.
+  // Both figures are parametric curves over the same 0..2*pi sweep, so
+  // they can be blended point-by-point before projection:
+  //
+  //   m = 0   flat mandala -- three vectors summed in the plane.
+  //           Frequencies 1, 1-b and 1+b give exact b-fold symmetry,
+  //           so the triad's middle voice sets the petal count.
+  //   m = 1   3D Lissajous -- one oscillator per axis, x, y and z.
+  //
+  // Yaw and pitch scale with m too, so at m = 0 the mandala sits flat
+  // and square to the viewer, and only tumbles as depth comes in. The
+  // rosette contributes z = 0, so depth shading and the perspective
+  // divide fade in on their own with no special-casing.
+  //
+  // Integer frequencies close over one 2*pi sweep, so every triad
+  // resolves; easing between triads makes them fractional and it opens.
   var STEPS = 1800, CHUNKS = 72;
   var bx = new Float32Array(STEPS + 1),
       by = new Float32Array(STEPS + 1),
       bz = new Float32Array(STEPS + 1);
 
-  function trace(f, ph, yaw, pit, radius, cx, cy, rgb, width, alpha) {
-    var cyw = Math.cos(yaw), syw = Math.sin(yaw);
-    var cp = Math.cos(pit), sp = Math.sin(pit);
-    var i, u, x, y, z, X, Y, Z, Z1, sc;
+  function trace(f, m, ph, yw, pit, radius, cx, cy, rgb, width, alpha) {
+    var cyw = Math.cos(yw * m), syw = Math.sin(yw * m);
+    var cp = Math.cos(pit * m), sp = Math.sin(pit * m);
 
+    var n = f[1], sum = f[0] + f[2];
+    var a2 = 1.15 * f[0] / sum, a3 = 1.15 * f[2] / sum;
+    var rs = 1 / (1 + a2 + a3);
+
+    var i, u, rx, ry, x, y, z, X, Y, Z, Z1, sc;
     for (i = 0; i <= STEPS; i++) {
       u = (i / STEPS) * Math.PI * 2;
-      x = Math.sin(f[0] * u + ph);
-      y = Math.sin(f[1] * u + Math.PI / 2);
-      z = Math.sin(f[2] * u + ph * 0.6);
+
+      // flat mandala
+      rx = (Math.cos(u + ph) +
+            a2 * Math.cos((1 - n) * u - ph) +
+            a3 * Math.cos((1 + n) * u + ph * 0.5)) * rs;
+      ry = (Math.sin(u + ph) +
+            a2 * Math.sin((1 - n) * u - ph) +
+            a3 * Math.sin((1 + n) * u + ph * 0.5)) * rs;
+
+      // blend toward the 3D knot
+      x = rx + (Math.sin(f[0] * u + ph) - rx) * m;
+      y = ry + (Math.sin(f[1] * u + Math.PI / 2) - ry) * m;
+      z = Math.sin(f[2] * u + ph * 0.6) * m;
+
       X  = x * cyw + z * syw;
       Z1 = z * cyw - x * syw;
       Y  = y * cp - Z1 * sp;
       Z  = y * sp + Z1 * cp;
-      sc = radius / (1 + Z * 0.22);
+      sc = (radius * (1 + 0.34 * (1 - m))) / (1 + Z * 0.22);
       bx[i] = cx + X * sc;
       by[i] = cy + Y * sc;
       bz[i] = Z;
     }
 
-    var per = Math.ceil(STEPS / CHUNKS), c0, e, k, zs, n, d;
+    var per = Math.ceil(STEPS / CHUNKS), c0, e, k, zs, cnt, d;
     for (c0 = 0; c0 < STEPS; c0 += per) {
       e = Math.min(c0 + per, STEPS);
-      zs = 0; n = 0;
-      for (k = c0; k <= e; k++) { zs += bz[k]; n++; }
-      d = 1 - ((zs / n) + 1.7) / 3.4;          // 1 = nearest, 0 = furthest
+      zs = 0; cnt = 0;
+      for (k = c0; k <= e; k++) { zs += bz[k]; cnt++; }
+      d = 1 - ((zs / cnt) + 1.7) / 3.4;        // 1 = nearest, 0 = furthest
       ctx.beginPath();
       for (k = c0; k <= e; k++) {
         k === c0 ? ctx.moveTo(bx[k], by[k]) : ctx.lineTo(bx[k], by[k]);
@@ -681,6 +718,51 @@ footer{
       ctx.lineWidth = width * (0.6 + 0.55 * d);
       ctx.stroke();
     }
+  }
+
+  // The retrace beam: a vector-display spot running the curve with a
+  // short phosphor tail behind it. Rides whatever trace() drew last,
+  // so it always sits exactly on the gold voice. Deliberately slow --
+  // one lap every ~7s -- so it reads as a beam, not a flicker.
+  var BEAM_TAIL = 150, BEAM_SEG = 15;
+
+  function beam(t01) {
+    var head = Math.floor(t01 * STEPS) % STEPS, s0, k, i0, i1, a;
+
+    for (s0 = BEAM_TAIL; s0 > 0; s0 -= BEAM_SEG) {
+      a = 1 - s0 / BEAM_TAIL;                 // 0 at the tail, 1 at the head
+      i0 = head - s0;
+      i1 = head - s0 + BEAM_SEG;
+      if (i0 < 0 || i1 < 0) continue;         // don't stitch across the wrap
+      ctx.beginPath();
+      for (k = i0; k <= i1; k++) {
+        k === i0 ? ctx.moveTo(bx[k], by[k]) : ctx.lineTo(bx[k], by[k]);
+      }
+      ctx.strokeStyle = 'rgba(240,224,178,' + (0.34 * a * a).toFixed(3) + ')';
+      ctx.lineWidth = 0.9 + 1.5 * a;
+      ctx.stroke();
+    }
+
+    // the spot itself
+    var hx = bx[head], hy = by[head], R = 9;
+    var g = ctx.createRadialGradient(hx, hy, 0, hx, hy, R);
+    g.addColorStop(0, 'rgba(255,246,222,0.85)');
+    g.addColorStop(0.35, 'rgba(232,206,138,0.30)');
+    g.addColorStop(1, 'rgba(232,206,138,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(hx, hy, R, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Where the blend sits right now. Smoothstepped so it dwells at each
+  // figure long enough to be read, rather than sliding straight past.
+  function blend() {
+    if (typeof FIGURE === 'number') return FIGURE;
+    if (FIGURE === 'rosette') return 0;
+    if (FIGURE === 'knot') return 1;
+    var w = (1 - Math.cos(morph)) / 2;
+    return w * w * (3 - 2 * w);
   }
 
   function swapRatio(now) {
@@ -702,6 +784,8 @@ footer{
     drift += 0.0007;
     yaw   += 0.0016;
     pitch += 0.0009;
+    morph += 0.0016;           // ~65s round trip, dwelling at each end
+    sweep = (sweep + 0.0024) % 1;   // ~7s per lap of the figure
 
     // trail rather than clear, so the line accumulates its own glow
     ctx.globalCompositeOperation = 'source-over';
@@ -716,13 +800,18 @@ footer{
     ctx.globalCompositeOperation = 'lighter';
     ctx.lineJoin = 'round';
 
+    var m = blend();
+
     // the drone: wider, violet, tumbling the other way underneath
-    trace(cur, drift, -yaw * 0.7, pitch * 0.6, r * 1.16, cx, cy,
+    trace(cur, m, drift, -yaw * 0.7, pitch * 0.6, r * 1.16, cx, cy,
           '110,90,168', 1.3, 0.34);
 
-    // the voice: gold, the knot you actually read
-    trace(cur, phase, yaw, pitch, r, cx, cy,
+    // the voice: gold, the figure you actually read
+    trace(cur, m, phase, yaw, pitch, r, cx, cy,
           '201,162,74', 1.15, 0.62);
+
+    // the beam rides the voice -- trace() just left it in the buffers
+    beam(sweep);
   }
 
   function still() {
@@ -736,8 +825,10 @@ footer{
         cy = H * (wide ? 0.40 : 0.34),
         r  = Math.min(W, H) * (wide ? 0.205 : 0.225);
     var f = norm(TRIADS[0]);
-    trace(f, 0, -0.63, 0.30, r * 1.16, cx, cy, '110,90,168', 1.3, 0.55);
-    trace(f, 0.9, 0.90, 0.50, r, cx, cy, '201,162,74', 1.15, 1.0);
+    var m = typeof FIGURE === 'number' ? FIGURE : (FIGURE === 'knot' ? 1 : 0);
+    trace(f, m, 0, -0.63, 0.30, r * 1.16, cx, cy, '110,90,168', 1.3, 0.55);
+    trace(f, m, 0.9, 0.90, 0.50, r, cx, cy, '201,162,74', 1.15, 1.0);
+    beam(0.18);
     if (readout) readout.textContent = TRIADS[0].join(':');
   }
 

@@ -7,8 +7,20 @@ node_modules. Open it in a browser to see it; push it anywhere to ship it.
 
 The band name already contains the thesis — *entheogen* + *oscillator* — so the
 sacred geometry on this site isn't decoration pasted on top. The figure in the
-hero is drawn live: a **3D Lissajous** — one oscillator per axis, one axis per
-member of the trio — projected back to the screen and slowly tumbling.
+hero is drawn live from three oscillators — one per member of the trio — and it
+**breathes between two readings of the same numbers**:
+
+- a flat, orderly **mandala**: the three oscillators summed as vectors in the
+  plane. Frequencies `1`, `1-b` and `1+b` give exact **b-fold symmetry**, so the
+  triad's middle voice sets the petal count.
+- a tumbling **3D knot**: a 3D Lissajous with one oscillator per axis — x, y and
+  z — projected back to the screen with yaw and pitch.
+
+Both are parametric curves over the same 0→2π sweep, so the morph is a
+point-by-point blend before projection. Yaw and pitch scale with the blend too,
+which is why the mandala sits flat and square to you at one end and only tumbles
+as depth comes in. Round trip is about 65 seconds, smoothstepped so it dwells at
+each figure long enough to be read.
 
 It drifts through **just-intonation triads**: 4:5:6 (major), 10:12:15 (minor),
 6:7:9 (septimal), 5:6:7, 8:9:12, 9:11:12, 7:9:11 — holding each for nine
@@ -16,15 +28,33 @@ seconds. The triad on screen is printed in the left rail. Those are the same
 ratios the statement says the band tunes to, so the geometry and the tuning are
 literally the same set of numbers.
 
-The mapping is exact, not decorative. For a triad `a:b:c` the three oscillators
-drive x, y and z directly. The curve is rotated by yaw and pitch, given a mild
-perspective divide, then drawn in 72 segments whose opacity and line weight come
-from each segment's average depth — which is what makes it read as weaving over
-and under itself instead of lying flat. Integer frequencies close over a single
-2π sweep, so every triad resolves into a finished knot; while it eases from one
-triad to the next the frequencies are fractional, the curve no longer closes,
-and it opens up. A wider violet copy tumbles the opposite way underneath as the
-drone.
+Integer frequencies close over one 2π sweep, so every triad resolves into a
+finished figure; while it eases from one triad to the next they're fractional,
+the curve no longer closes, and it opens up. A wider violet copy tumbles the
+opposite way underneath as the drone.
+
+### The retrace beam
+
+A vector-display spot runs the curve with a short phosphor tail — one lap every
+~7 seconds, slow enough to read as a beam rather than a flicker. It rides
+whatever was drawn last, so it always sits exactly on the gold voice.
+
+### Choosing a figure
+
+Near the top of the `<script>` block:
+
+```js
+var FIGURE = 'morph';   // 'morph' | 'rosette' | 'knot'
+```
+
+`rosette` holds the flat mandala, `knot` holds the 3D Lissajous. You can also
+override it without editing the file — handy for comparing:
+
+```
+https://entheoscillator.com/?figure=rosette
+https://entheoscillator.com/?figure=knot
+https://entheoscillator.com/?figure=0.5    (pin a point mid-morph)
+```
 
 Costs about 0.4ms/frame under software rendering — roughly 40× under budget —
 and pauses entirely when the tab is hidden.
@@ -99,8 +129,9 @@ external requests, download Eczar, Spectral, and IBM Plex Mono and swap the
 
 ## Accessibility
 
-- `prefers-reduced-motion` is respected: the harmonograph draws one resolved
-  3:2 figure and stops, and entry animations are cut to near-zero.
+- `prefers-reduced-motion` is respected: the figure draws one resolved 4:5:6
+  state and stops, and entry animations are cut to near-zero. Reduced motion
+  gets the calm, orderly mandala rather than the tumbling knot.
 - Keyboard focus is visible (gold outline).
 - The canvas is `aria-hidden` — it's atmosphere, not content.
 - The page reads correctly with the animation never running; nothing important
