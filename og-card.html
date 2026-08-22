@@ -1,0 +1,77 @@
+<!doctype html><meta charset="utf-8">
+<!-- Source for og.png. Render at exactly 1200x630 and save over og.png:
+     python3 -m http.server 8080
+     google-chrome --headless --disable-gpu --hide-scrollbars \
+       --virtual-time-budget=12000 --window-size=1200,630 \
+       --screenshot=og.png http://localhost:8080/og-card.html
+     Then bump ?v= on og:image / twitter:image in index.html. -->
+<meta name="robots" content="noindex">
+<title>og.png source</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Eczar:wght@400;500&family=Spectral:ital,wght@0,300;1,300&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;box-sizing:border-box}
+  body{width:1200px;height:630px;background:#0B0A14;overflow:hidden;position:relative}
+  canvas{position:absolute;inset:0}
+  .veil{position:absolute;inset:0;background:
+    radial-gradient(60% 70% at 20% 62%, rgba(7,6,14,.80) 0%, transparent 72%),
+    radial-gradient(120% 100% at 68% 42%, transparent 0%, rgba(11,10,20,.34) 62%, rgba(7,6,14,.86) 100%)}
+  .txt{position:absolute;left:74px;bottom:112px;z-index:3}
+  h1{font-family:Eczar,serif;font-weight:400;font-size:60px;letter-spacing:.20em;
+     text-indent:.20em;color:#EDE6D6;text-transform:uppercase;line-height:1;
+     text-shadow:0 2px 40px rgba(7,6,14,.95),0 0 70px rgba(201,162,74,.22)}
+  .rule{height:1px;width:420px;margin:30px 0 24px;
+        background:linear-gradient(to right,#C9A24A,rgba(110,90,168,.5),transparent)}
+  p{font-family:Spectral,serif;font-weight:300;font-size:26px;line-height:1.5;
+    color:#EDE6D6;max-width:27ch;text-shadow:0 2px 24px rgba(7,6,14,.9)}
+  p em{font-style:italic;color:#E8CE8A}
+  .meta{position:absolute;left:74px;bottom:52px;font-family:'IBM Plex Mono',monospace;
+        font-size:14px;letter-spacing:.3em;text-transform:uppercase;color:#9C9484;z-index:3}
+</style>
+<body>
+<canvas id="c" width="1200" height="630"></canvas>
+<div class="veil"></div>
+<div class="txt">
+  <h1>Entheoscillator</h1>
+  <div class="rule"></div>
+  <p>Three oscillators plotted against each other draw a mandala.</p>
+</div>
+<div class="meta">Ambient &middot; Drone &middot; Bay Area, California</div>
+<script>
+// same figure as the site, held at the orderly mandala -- it reads better
+// than the knot at thumbnail size in a feed
+var ctx=document.getElementById('c').getContext('2d');
+var STEPS=2600, CHUNKS=90;
+var bx=new Float32Array(STEPS+1),by=new Float32Array(STEPS+1),bz=new Float32Array(STEPS+1);
+function trace(f,m,ph,yw,pit,radius,cx,cy,rgb,width,alpha){
+  var cyw=Math.cos(yw*m),syw=Math.sin(yw*m),cp=Math.cos(pit*m),sp=Math.sin(pit*m);
+  var n=f[1],sum=f[0]+f[2],a2=1.15*f[0]/sum,a3=1.15*f[2]/sum,rs=1/(1+a2+a3);
+  var i,u,rx,ry,x,y,z,X,Y,Z,Z1,sc;
+  for(i=0;i<=STEPS;i++){
+    u=(i/STEPS)*Math.PI*2;
+    rx=(Math.cos(u+ph)+a2*Math.cos((1-n)*u-ph)+a3*Math.cos((1+n)*u+ph*0.5))*rs;
+    ry=(Math.sin(u+ph)+a2*Math.sin((1-n)*u-ph)+a3*Math.sin((1+n)*u+ph*0.5))*rs;
+    x=rx+(Math.sin(f[0]*u+ph)-rx)*m;
+    y=ry+(Math.sin(f[1]*u+Math.PI/2)-ry)*m;
+    z=Math.sin(f[2]*u+ph*0.6)*m;
+    X=x*cyw+z*syw; Z1=z*cyw-x*syw; Y=y*cp-Z1*sp; Z=y*sp+Z1*cp;
+    sc=(radius*(1+0.34*(1-m)))/(1+Z*0.22);
+    bx[i]=cx+X*sc; by[i]=cy+Y*sc; bz[i]=Z;
+  }
+  var per=Math.ceil(STEPS/CHUNKS),c0,e,k,zs,cnt,d;
+  for(c0=0;c0<STEPS;c0+=per){
+    e=Math.min(c0+per,STEPS); zs=0;cnt=0;
+    for(k=c0;k<=e;k++){zs+=bz[k];cnt++;}
+    d=1-((zs/cnt)+1.7)/3.4;
+    ctx.beginPath();
+    for(k=c0;k<=e;k++){k===c0?ctx.moveTo(bx[k],by[k]):ctx.lineTo(bx[k],by[k]);}
+    ctx.strokeStyle='rgba('+rgb+','+(alpha*(0.16+0.84*d)).toFixed(3)+')';
+    ctx.lineWidth=width*(0.6+0.55*d); ctx.stroke();
+  }
+}
+ctx.fillStyle='#0B0A14'; ctx.fillRect(0,0,1200,630);
+ctx.globalCompositeOperation='lighter'; ctx.lineJoin='round';
+var f=[4,5,6], cx=800, cy=290, r=196;
+trace(f,0,0.0,-0.63,0.30,r*1.16,cx,cy,'110,90,168',1.5,0.85);
+trace(f,0,0.9, 0.90,0.50,r,     cx,cy,'201,162,74',1.35,1.0);
+</script></body>

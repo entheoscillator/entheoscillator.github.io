@@ -62,6 +62,32 @@ https://entheoscillator.com/?figure=0.5    (pin a point mid-morph)
 Costs about 0.4ms/frame under software rendering — roughly 40× under budget —
 and pauses entirely when the tab is hidden.
 
+## Sharing card and icons
+
+`og.png` (1200×630) is the link preview — the one that shows in iMessage, Slack,
+Discord, WhatsApp, Facebook and X. It's generated from **`og-card.html`**, which
+runs the site's own figure code, so the preview is the real geometry rather than
+a mockup. It's held at the orderly mandala; the 3D knot turns to noise at
+thumbnail size in a feed.
+
+To regenerate it:
+
+```sh
+python3 -m http.server 8080
+google-chrome --headless --disable-gpu --hide-scrollbars \
+  --virtual-time-budget=12000 --window-size=1200,630 \
+  --screenshot=og.png http://localhost:8080/og-card.html
+```
+
+Then **bump `?v=`** on `og:image` and `twitter:image` in `index.html`. Scrapers
+cache aggressively by URL — without a new query string, Facebook and Slack will
+keep serving the old card for days.
+
+The icon is the same three-circle triad mark as the members section, chosen
+because it survives 16px; the hero figure turns to mush at that size. Source of
+truth is `favicon.svg`; `favicon.ico`, `apple-touch-icon.png` and `icon-192/512`
+are rendered from it. If you change the SVG, re-render the rest.
+
 ## Things you need to edit
 
 Search `index.html` for `EDIT:` — there are two.

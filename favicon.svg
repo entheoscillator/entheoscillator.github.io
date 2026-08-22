@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Entheoscillator">
+  <rect width="64" height="64" rx="13" fill="#0B0A14"/>
+  <g fill="none" stroke="#C9A24A" stroke-width="3.4">
+    <circle cx="32" cy="23" r="11.5"/>
+    <circle cx="21.5" cy="41" r="11.5"/>
+    <circle cx="42.5" cy="41" r="11.5"/>
+  </g>
+</svg>
