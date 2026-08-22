@@ -7,26 +7,27 @@ node_modules. Open it in a browser to see it; push it anywhere to ship it.
 
 The band name already contains the thesis — *entheogen* + *oscillator* — so the
 sacred geometry on this site isn't decoration pasted on top. The figure in the
-hero is drawn live: three rotating vectors — one oscillator per member of the
-trio — summed in the plane, on a canvas, in real time.
+hero is drawn live: a **3D Lissajous** — one oscillator per axis, one axis per
+member of the trio — projected back to the screen and slowly tumbling.
 
-It drifts through **just-intonation triads** — 4:5:6 (major), 10:12:15 (minor),
-6:7:9 (septimal), 3:4:5, 5:6:7, 2:3:4, 8:9:12, 9:11:12 — holding each for nine
+It drifts through **just-intonation triads**: 4:5:6 (major), 10:12:15 (minor),
+6:7:9 (septimal), 5:6:7, 8:9:12, 9:11:12, 7:9:11 — holding each for nine
 seconds. The triad on screen is printed in the left rail. Those are the same
 ratios the statement says the band tunes to, so the geometry and the tuning are
 literally the same set of numbers.
 
 The mapping is exact, not decorative. For a triad `a:b:c` the three oscillators
-run at frequencies `1`, `1-b` and `1+b`, which produces **b-fold rotational
-symmetry** — so the middle voice sets how many petals the figure has (4:5:6
-gives five, 2:3:4 gives three) and the outer two set how deep they cut. Integer
-frequencies close over a single 2π sweep, so each triad resolves into a finished
-rosette; while it eases from one triad to the next the frequencies are
-fractional, the curve no longer closes, and it blooms open. Three nested copies
-at different scales and phases give the interference texture.
+drive x, y and z directly. The curve is rotated by yaw and pitch, given a mild
+perspective divide, then drawn in 72 segments whose opacity and line weight come
+from each segment's average depth — which is what makes it read as weaving over
+and under itself instead of lying flat. Integer frequencies close over a single
+2π sweep, so every triad resolves into a finished knot; while it eases from one
+triad to the next the frequencies are fractional, the curve no longer closes,
+and it opens up. A wider violet copy tumbles the opposite way underneath as the
+drone.
 
-The figure owns the first screen, then fades back to 22% as you scroll so it
-never fights the body copy.
+Costs about 0.4ms/frame under software rendering — roughly 40× under budget —
+and pauses entirely when the tab is hidden.
 
 ## Things you need to edit
 
